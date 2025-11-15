@@ -37,6 +37,11 @@ struct Group_t
 	int m_iOffscreenArrowsOffset = 100;
 	float m_flOffscreenArrowsMaxDistance = 1000.f;
 
+	int m_iOffscreenArcHeight = 8;
+	float m_flOffscreenArcWidthMinDeg = 24.f;
+	float m_flOffscreenArcWidthMaxDeg = 90.f;
+	int m_iOffscreenArcMaxPlayers = 5;
+
 	bool m_bSightlines = false;
 	bool m_bSightlinesIgnoreZ = true;
 

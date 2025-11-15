@@ -750,14 +750,18 @@ void CMenu::MenuVisuals(int iTab)
 						EndPopup();
 					}
 
-					SetNextWindowSize({ H::Draw.Scale(300), 0 });
-					if (FBeginPopup("OffscreenArrows"))
-					{
-						FSlider("Offset", &tGroup.m_iOffscreenArrowsOffset, 0, 1000, 25, "%i", FSliderEnum::Precision);
-						FSlider("Max distance", &tGroup.m_flOffscreenArrowsMaxDistance, 0.f, 5000.f, 50.f, "%g", FSliderEnum::Min | FSliderEnum::Precision);
+				SetNextWindowSize({ H::Draw.Scale(300), 0 });
+				if (FBeginPopup("OffscreenArrows"))
+				{
+					FSlider("Offset", &tGroup.m_iOffscreenArrowsOffset, 0, 1000, 25, "%i", FSliderEnum::Precision);
+					FSlider("Max distance", &tGroup.m_flOffscreenArrowsMaxDistance, 0.f, 5000.f, 50.f, "%g", FSliderEnum::Min | FSliderEnum::Precision);
+					FSlider("Arc height", &tGroup.m_iOffscreenArcHeight, 2, 32, 1, "%i");
+					FSlider("Arc width min (deg)", &tGroup.m_flOffscreenArcWidthMinDeg, 10.f, 180.f, 1.f, "%g", FSliderEnum::Precision);
+					FSlider("Arc width max (deg)", &tGroup.m_flOffscreenArcWidthMaxDeg, 10.f, 180.f, 1.f, "%g", FSliderEnum::Precision);
+					FSlider("Max arcs", &tGroup.m_iOffscreenArcMaxPlayers, 1, 5, 1, "%i");
 
-						EndPopup();
-					}
+					EndPopup();
+				}
 
 					SetNextWindowSize({ H::Draw.Scale(300), 0 });
 					if (FBeginPopup("Sightlines"))
@@ -2632,14 +2636,14 @@ void CMenu::MenuSettings(int iTab)
 						case BindEnum::Key:
 							switch (_tBind.m_iInfo)
 							{
-							case BindEnum::KeyEnum::Hold: { sType = "hold"; break; }
-							case BindEnum::KeyEnum::Toggle: { sType = "toggle"; break; }
-							case BindEnum::KeyEnum::DoubleClick: { sType = "double"; break; }
+                        case BindEnum::KeyEnum::Hold: { sType = "Hold"; break; }
+                        case BindEnum::KeyEnum::Toggle: { sType = "Toggle"; break; }
+                        case BindEnum::KeyEnum::DoubleClick: { sType = "Double"; break; }
 							}
 							sInfo = VK2STR(_tBind.m_iKey);
 							break;
-						case BindEnum::Class:
-							sType = "class";
+                    case BindEnum::Class:
+                        sType = "Class";
 							switch (_tBind.m_iInfo)
 							{
 							case BindEnum::ClassEnum::Scout: { sInfo = "scout"; break; }
@@ -2653,8 +2657,8 @@ void CMenu::MenuSettings(int iTab)
 							case BindEnum::ClassEnum::Spy: { sInfo = "spy"; break; }
 							}
 							break;
-						case BindEnum::WeaponType:
-							sType = "weapon";
+                    case BindEnum::WeaponType:
+                        sType = "Weapon";
 							switch (_tBind.m_iInfo)
 							{
 							case BindEnum::WeaponTypeEnum::Hitscan: { sInfo = "hitscan"; break; }
@@ -2663,8 +2667,8 @@ void CMenu::MenuSettings(int iTab)
 							case BindEnum::WeaponTypeEnum::Throwable: { sInfo = "throwable"; break; }
 							}
 							break;
-						case BindEnum::ItemSlot:
-							sType = "slot";
+                    case BindEnum::ItemSlot:
+                        sType = "Slot";
 							sInfo = std::format("{}", _tBind.m_iInfo + 1);
 							break;
 						}
@@ -3506,14 +3510,14 @@ void CMenu::DrawBinds()
 					case BindEnum::Key:
 						switch (tBind.m_iInfo)
 						{
-						case BindEnum::KeyEnum::Hold: { sType = "hold"; break; }
-						case BindEnum::KeyEnum::Toggle: { sType = "toggle"; break; }
-						case BindEnum::KeyEnum::DoubleClick: { sType = "double"; break; }
+                            case BindEnum::KeyEnum::Hold: { sType = "Hold"; break; }
+                            case BindEnum::KeyEnum::Toggle: { sType = "Toggle"; break; }
+                            case BindEnum::KeyEnum::DoubleClick: { sType = "Double"; break; }
 						}
 						sInfo = VK2STR(tBind.m_iKey);
 						break;
-					case BindEnum::Class:
-						sType = "class";
+                        case BindEnum::Class:
+                            sType = "Class";
 						switch (tBind.m_iInfo)
 						{
 						case BindEnum::ClassEnum::Scout: { sInfo = "scout"; break; }
@@ -3527,8 +3531,8 @@ void CMenu::DrawBinds()
 						case BindEnum::ClassEnum::Spy: { sInfo = "spy"; break; }
 						}
 						break;
-					case BindEnum::WeaponType:
-						sType = "weapon";
+                        case BindEnum::WeaponType:
+                            sType = "Weapon";
 						switch (tBind.m_iInfo)
 						{
 						case BindEnum::WeaponTypeEnum::Hitscan: { sInfo = "hitscan"; break; }
@@ -3537,8 +3541,8 @@ void CMenu::DrawBinds()
 						case BindEnum::WeaponTypeEnum::Throwable: { sInfo = "throwable"; break; }
 						}
 						break;
-					case BindEnum::ItemSlot:
-						sType = "slot";
+                        case BindEnum::ItemSlot:
+                            sType = "Slot";
 						sInfo = std::format("{}", tBind.m_iInfo + 1);
 						break;
 					}
@@ -3561,18 +3565,40 @@ void CMenu::DrawBinds()
 	if (tDragBox != tOld)
 		SetNextWindowPos({ float(tDragBox.x), float(tDragBox.y) }, ImGuiCond_Always);
 
-	float flNameWidth = 0, flInfoWidth = 0, flStateWidth = 0;
-	PushFont(F::Render.FontSmall);
-	for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
-	{
-		flNameWidth = std::max(flNameWidth, FCalcTextSize(sName).x);
-		flInfoWidth = std::max(flInfoWidth, FCalcTextSize(sInfo.c_str()).x);
-		flStateWidth = std::max(flStateWidth, FCalcTextSize(sState.c_str()).x);
-	}
-	PopFont();
-	flNameWidth += H::Draw.Scale(9), flInfoWidth += H::Draw.Scale(9), flStateWidth += H::Draw.Scale(9);
+    float flKindWidth = 0, flNameWidth = 0, flValueWidth = 0, flStatusWidth = 0;
+    PushFont(F::Render.FontSmall);
+    for (auto& [sName, sInfo, sState, iBind, tBind] : vInfo)
+    {
+        flKindWidth = std::max(flKindWidth, FCalcTextSize(sInfo.c_str()).x);
+        flNameWidth = std::max(flNameWidth, FCalcTextSize(sName).x);
+        flValueWidth = std::max(flValueWidth, FCalcTextSize(sState.c_str()).x);
 
-	float flWidth = flNameWidth + flInfoWidth + flStateWidth + (m_bIsOpen ? H::Draw.Scale(113) : H::Draw.Scale(14));
+        std::string sDisplayState;
+        if (!tBind.m_vVars.empty())
+        {
+            auto* pVar = tBind.m_vVars.front();
+            if (auto pBool = pVar->As<bool>())
+                sDisplayState = pBool->Value ? "On" : "Off";
+            else if (auto pStr = pVar->As<std::string>())
+                sDisplayState = std::format("{}", pStr->Value);
+            else if (auto pInt = pVar->As<int>())
+            {
+                if (!pVar->m_vValues.empty())
+                {
+                    int idx = std::clamp(pInt->Value, 0, int(pVar->m_vValues.size()) - 1);
+                    sDisplayState = pVar->m_vValues[idx];
+                }
+            }
+        }
+        flStatusWidth = std::max(flStatusWidth, FCalcTextSize(sDisplayState.c_str()).x);
+    }
+    PopFont();
+    flKindWidth += H::Draw.Scale(9);
+    flNameWidth += H::Draw.Scale(9);
+    flValueWidth += H::Draw.Scale(9);
+    flStatusWidth += H::Draw.Scale(9);
+
+    float flWidth = flKindWidth + flNameWidth + flValueWidth + flStatusWidth + (m_bIsOpen ? H::Draw.Scale(113) : H::Draw.Scale(14));
 	float flHeight = H::Draw.Scale(18 * vInfo.size() + (Vars::Menu::BindWindowTitle.Value ? 42 : 12));
 	SetNextWindowSize({ flWidth, flHeight });
 	PushStyleVar(ImGuiStyleVar_WindowMinSize, { H::Draw.Scale(40), H::Draw.Scale(40) });
@@ -3580,10 +3606,7 @@ void CMenu::DrawBinds()
 	{
 		ImVec2 vWindowPos = GetWindowPos();
 
-		if (Vars::Menu::BindWindowTitle.Value)
-			RenderTwoToneBackground(H::Draw.Scale(28), F::Render.Background0, F::Render.Background0p5, F::Render.Background2);
-		else
-			RenderBackground(F::Render.Background0p5, F::Render.Background2);
+		RenderBackground(F::Render.Background0p5, F::Render.Background2);
 
 		tDragBox.x = vWindowPos.x; tDragBox.y = vWindowPos.y; tOld = tDragBox;
 		if (m_bIsOpen)
@@ -3592,12 +3615,16 @@ void CMenu::DrawBinds()
 		int iListStart = 8;
 		if (Vars::Menu::BindWindowTitle.Value)
 		{
-			SetCursorPos({ H::Draw.Scale(8), H::Draw.Scale(6) });
-			IconImage(ICON_MD_KEYBOARD);
 			PushFont(F::Render.FontLarge);
-			SetCursorPos({ H::Draw.Scale(30), H::Draw.Scale(7) });
+			SetCursorPos({ H::Draw.Scale(12), H::Draw.Scale(7) });
 			FText("Binds");
 			PopFont();
+
+			auto pDrawList = GetWindowDrawList();
+        float x0 = vWindowPos.x + H::Draw.Scale(7);
+        float x1 = vWindowPos.x + GetWindowSize().x - H::Draw.Scale(7);
+        float y  = vWindowPos.y + H::Draw.Scale(28);
+        pDrawList->AddRectFilled({ x0, y }, { x1, y + H::Draw.Scale(1) }, F::Render.Accent);
 
 			iListStart = 36;
 		}
@@ -3610,18 +3637,59 @@ void CMenu::DrawBinds()
 			if (m_bIsOpen)
 				PushTransparent(!F::Binds.WillBeEnabled(iBind), true);
 
-			SetCursorPos({ flPosX += H::Draw.Scale(12), H::Draw.Scale(iListStart + 18 * i) });
-			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
-			FText(sName);
-			PopStyleColor();
+        SetCursorPos({ flPosX += H::Draw.Scale(12), H::Draw.Scale(iListStart + 18 * i) });
+        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
+        FText(sInfo.c_str());
+        PopStyleColor();
 
-			SetCursorPos({ flPosX += flNameWidth, H::Draw.Scale(iListStart + 18 * i) });
-			PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
-			FText(sInfo.c_str());
+        SetCursorPos({ flPosX += flKindWidth, H::Draw.Scale(iListStart + 18 * i) });
+        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Active.Value : F::Render.Inactive.Value);
+        FText(sName);
+        PopStyleColor();
 
-			SetCursorPos({ flPosX += flInfoWidth, H::Draw.Scale(iListStart + 18 * i) });
-			FText(sState.c_str());
-			PopStyleColor();
+        SetCursorPos({ flPosX += flNameWidth, H::Draw.Scale(iListStart + 18 * i) });
+        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
+        FText(sState.c_str());
+        PopStyleColor();
+
+        std::string sDisplayState = sState;
+        if (!tBind.m_vVars.empty())
+        {
+            auto* pVar = tBind.m_vVars.front();
+            if (auto pBool = pVar->As<bool>())
+                sDisplayState = pBool->Value ? "On" : "Off";
+            else if (auto pStr = pVar->As<std::string>())
+                sDisplayState = pStr->Value;
+            else if (auto pInt = pVar->As<int>())
+            {
+                if (!pVar->m_vValues.empty())
+                {
+                    int idx = std::clamp(pInt->Value, 0, int(pVar->m_vValues.size()) - 1);
+                    sDisplayState = pVar->m_vValues[idx];
+                }
+                else
+                {
+                    if (pVar->m_sName.find("Backtrack::Latency") != std::string::npos)
+                    {
+                        int val = pInt->Value;
+                        if (val == 0)
+                            val = Vars::Backtrack::Window.Value;
+                        sDisplayState = std::format("{} ms", val);
+                    }
+                    else if (pVar->m_sName.find("Backtrack::Window") != std::string::npos)
+                    {
+                        sDisplayState = std::format("{} ms", pInt->Value);
+                    }
+                    else
+                        sDisplayState = std::format("{}", pInt->Value);
+                }
+            }
+        }
+
+        SetCursorPos({ flPosX += flValueWidth, H::Draw.Scale(iListStart + 18 * i) });
+        PushStyleColor(ImGuiCol_Text, tBind.m_bActive ? F::Render.Accent.Value : F::Render.Inactive.Value);
+        FText(sDisplayState.c_str());
+        PopStyleColor();
 
 			if (m_bIsOpen)
 			{	// buttons

@@ -156,8 +156,6 @@ std::vector<TickRecord*> CBacktrack::GetValidRecords(std::vector<TickRecord*>& v
 	{
 		for (auto pRecord : vRecords)
 		{
-			if (pRecord->m_bInvalid)
-				continue;
 			float flDelta = fabsf(flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(pRecord->m_flSimTime + flTimeMod)));
 			if (flDelta > GetWindow())
 				continue;
@@ -171,8 +169,6 @@ std::vector<TickRecord*> CBacktrack::GetValidRecords(std::vector<TickRecord*>& v
 		float flMinDelta = 0.2f;
 		for (auto pRecord : vRecords)
 		{
-			if (pRecord->m_bInvalid)
-				continue;
 			float flDelta = fabsf(flCorrect - TICKS_TO_TIME(iServerTick - TIME_TO_TICKS(pRecord->m_flSimTime + flTimeMod)));
 			if (flDelta > flMinDelta)
 				continue;
@@ -258,10 +254,22 @@ void CBacktrack::MakeRecords()
 			if (vDelta.Length2DSqr() > flDist)
 			{
 				bLagComp = true;
-				vRecords.resize(1);
+				if (!H::Entities.GetLagCompensation(pPlayer->entindex()))
+					vRecords.resize(1);
+				std::for_each(vRecords.begin() + 1, vRecords.end(), [](auto& tRecord) { tRecord.m_bInvalid = true; });
 			}
 
-			// drop invalidated historical records
+			for (auto& tRecord : vRecords)
+			{
+				if (!tRecord.m_bInvalid)
+					continue;
+
+				tRecord.m_vOrigin = tCurRecord.m_vOrigin;
+				tRecord.m_vMins = tCurRecord.m_vMins;
+				tRecord.m_vMaxs = tCurRecord.m_vMaxs;
+				tRecord.m_bOnShot = tCurRecord.m_bOnShot;
+				memcpy(tRecord.m_aBones, tCurRecord.m_aBones, sizeof(tRecord.m_aBones));
+			}
 		}
 
 		H::Entities.SetLagCompensation(pPlayer->entindex(), bLagComp);
@@ -384,9 +392,7 @@ void CBacktrack::AdjustPing(CNetChannel* pNetChan)
 
 	if (Vars::Backtrack::Latency.Value || m_flFakeLatency)
 	{
-		float flDelta = flLatency - m_flFakeLatency;
-		float flAlpha = std::clamp(fabsf(flDelta) / m_flMaxUnlag, 0.05f, 0.2f);
-		m_flFakeLatency = std::clamp(m_flFakeLatency + flDelta * flAlpha, 0.f, m_flMaxUnlag);
+		m_flFakeLatency = std::clamp(m_flFakeLatency + (flLatency - m_flFakeLatency) * 0.1f, m_flFakeLatency - TICK_INTERVAL, m_flFakeLatency + TICK_INTERVAL);
 		if (!flLatency && m_flFakeLatency < TICK_INTERVAL)
 			m_flFakeLatency = 0.f;
 	}
@@ -436,9 +442,9 @@ void CBacktrack::Draw(CTFPlayer* pLocal)
 		align = ALIGN_TOPRIGHT;
 	}
 
-	if (flFake || Vars::Backtrack::Interp.Value > G::Lerp * 1000)
-		H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Ping {:.0f} (+ {:.0f}) ms", flLatency, flFake).c_str());
-	else
-		H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Ping {:.0f} ms", flLatency).c_str());
+    if (flFake || Vars::Backtrack::Interp.Value > G::Lerp * 1000)
+        H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Real {:.0f} (+{:.0f}) ms", flLatency, flFake).c_str());
+    else
+        H::Draw.StringOutlined(fFont, x, y, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Real {:.0f} ms", flLatency).c_str());
 	H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Scoreboard {} ms", iLatencyScoreboard).c_str());
 }

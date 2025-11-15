@@ -587,25 +587,25 @@ void CCritHack::Draw(CTFPlayer* pLocal)
 		align = ALIGN_TOPRIGHT;
 	}
 
-	if (!pWeapon->AreRandomCritsEnabled())
-	{
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextBad.Value, Vars::Menu::Theme::Background.Value, align, "Random crits disabled");
-		return;
-	}
+    if (!pWeapon->AreRandomCritsEnabled())
+    {
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 150, 150, 255), Vars::Menu::Theme::Background.Value, align, "Random crits disabled");
+        return;
+    }
 
 
 
 	float flTickBase = TICKS_TO_TIME(pLocal->m_nTickBase());
 
-	if (Vars::Misc::Game::AntiCheatCompatibility.Value)
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextBad.Value, Vars::Menu::Theme::Background.Value, align, "Anticheat compatibility");
+    if (Vars::Misc::Game::AntiCheatCompatibility.Value)
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 150, 150, 255), Vars::Menu::Theme::Background.Value, align, "Anticheat compatibility");
 
-	if (pLocal->IsCritBoosted())
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextMisc.Value, Vars::Menu::Theme::Background.Value, align, "Crit Boosted");
+    if (pLocal->IsCritBoosted())
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(100, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, "Crit Boosted");
 	else if (pWeapon->m_flCritTime() > flTickBase)
 	{
-		float flTime = pWeapon->m_flCritTime() - flTickBase;
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextMisc.Value, Vars::Menu::Theme::Background.Value, align, std::format("Streaming crits {:.1f}s", flTime).c_str());
+        float flTime = pWeapon->m_flCritTime() - flTickBase;
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(100, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("Streaming crits {:.1f}s", flTime).c_str());
 	}
 	else if (!m_bCritBanned)
 	{
@@ -613,55 +613,53 @@ void CCritHack::Draw(CTFPlayer* pLocal)
 		{
 			if (m_iAvailableCrits > 0)
 			{
-				if (!pWeapon->IsRapidFire() || flTickBase >= pWeapon->m_flLastRapidFireCritCheckTime() + 1.f)
-					H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextGood.Value, Vars::Menu::Theme::Background.Value, align, "Crit Ready");
-				else
-				{
-					float flTime = pWeapon->m_flLastRapidFireCritCheckTime() + 1.f - flTickBase;
-					H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Wait {:.1f}s", flTime).c_str());
-				}
+                if (!pWeapon->IsRapidFire() || flTickBase >= pWeapon->m_flLastRapidFireCritCheckTime() + 1.f)
+                    H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(150, 255, 150, 255), Vars::Menu::Theme::Background.Value, align, "Crit Ready");
+                else
+                {
+                    float flTime = pWeapon->m_flLastRapidFireCritCheckTime() + 1.f - flTickBase;
+                    H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("Wait {:.1f}s", flTime).c_str());
+                }
 			}
 			else
 			{
-				int iShots = m_iNextCrit;
-				H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextBad.Value, Vars::Menu::Theme::Background.Value, align, std::format("Crit in {}{} shot{}", iShots, iShots == BUCKET_ATTEMPTS ? "+" : "", iShots == 1 ? "" : "s").c_str());
+                int iShots = m_iNextCrit;
+                H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 150, 150, 255), Vars::Menu::Theme::Background.Value, align, std::format("Crit in {}{} shot{}", iShots, iShots == BUCKET_ATTEMPTS ? "+" : "", iShots == 1 ? "" : "s").c_str());
 			}
 		}
 	}
-	else
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextBad.Value, Vars::Menu::Theme::Background.Value, align, std::format("Deal {} damage", ceilf(m_flDamageTilFlip)).c_str());
+    else
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 150, 150, 255), Vars::Menu::Theme::Background.Value, align, std::format("Deal {} damage", ceilf(m_flDamageTilFlip)).c_str());
 	
-	if (m_iPotentialCrits > 0)
-	{
-		int iCrits = m_iAvailableCrits;
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("{}{} / {} crits", iCrits, iCrits == BUCKET_ATTEMPTS ? "+" : "", m_iPotentialCrits).c_str());
+    if (m_iPotentialCrits > 0)
+    {
+        int iCrits = m_iAvailableCrits;
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("{}{} / {} potential crits", iCrits, iCrits == BUCKET_ATTEMPTS ? "+" : "", m_iPotentialCrits).c_str());
 		
 		if (m_iNextCrit && iCrits)
 		{
-			int iShots = m_iNextCrit;
-			H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Next in {}{} shot{}", iShots, iShots == BUCKET_ATTEMPTS ? "+" : "", iShots == 1 ? "" : "s").c_str());
-		}
-	}
+            int iShots = m_iNextCrit;
+            H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("Next in {}{} shot{}", iShots, iShots == BUCKET_ATTEMPTS ? "+" : "", iShots == 1 ? "" : "s").c_str());
+        }
+    }
 
-	if (m_flDamageTilFlip && !m_bCritBanned)
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Colors::IndicatorTextGood.Value, Vars::Menu::Theme::Background.Value, align, std::format("{} damage", floorf(m_flDamageTilFlip)).c_str());
+    if (m_flDamageTilFlip && !m_bCritBanned)
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(150, 255, 150, 255), Vars::Menu::Theme::Background.Value, align, std::format("{} damage", floor(m_flDamageTilFlip)).c_str());
 
-	if (m_iDesyncDamage)
-	{
-		auto tColor = m_iDesyncDamage < 0
-			? Vars::Menu::Theme::Active.Value.Lerp(Vars::Colors::IndicatorTextMid.Value, std::min(fabsf(m_iDesyncDamage) / 100, 1.f))
-			: Vars::Colors::IndicatorTextBad.Value;
-		H::Draw.StringOutlined(fFont, x, y += nTall, tColor, Vars::Menu::Theme::Background.Value, align, std::format("{}{} desync", m_iDesyncDamage > 0 ? "+" : "", m_iDesyncDamage).c_str());
-	}
+    if (m_iDesyncDamage)
+    {
+        auto tColor = m_iDesyncDamage < 0 ? Color_t(150, 255, 150, 255) : Color_t(255, 150, 150, 255);
+        H::Draw.StringOutlined(fFont, x, y += nTall, tColor, Vars::Menu::Theme::Background.Value, align, std::format("Damage desync {}{}", m_iDesyncDamage > 0 ? "+" : "", m_iDesyncDamage).c_str());
+    }
 
 
 
-	if (Vars::Debug::Info.Value)
-	{
-		H::Draw.StringOutlined(fFont, x, y += nTall * 2, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("RangedDamage: {}, CritDamage: {}", m_iRangedDamage, m_iCritDamage).c_str());
+    if (Vars::Debug::Info.Value)
+    {
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("RangedDamage: {}, CritDamage: {}", m_iRangedDamage, m_iCritDamage).c_str());
 
 #ifdef SERVER_CRIT_DATA
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("AllDamage: {} ({})", m_iRangedDamage + m_iMeleeDamage, m_iMeleeDamage).c_str());
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("AllDamage: {} ({})", m_iRangedDamage + m_iMeleeDamage, m_iMeleeDamage).c_str());
 
 		if (s_pCTFGameStats)
 		{
@@ -676,18 +674,18 @@ void CCritHack::Draw(CTFPlayer* pLocal)
 					//iRangedDamage = m_iRangedDamage;
 					//iCritDamage = m_iCritDamage = 0;
 					//iDamage = m_iRangedDamage + m_iMeleeDamage;
+                
+                    H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("RangedDamage: {}, CritDamage: {}", iRangedDamage, iCritDamage).c_str());
+                    H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("AllDamage: {} ({})", iDamage, iDamage - iRangedDamage).c_str());
+                }
+            }
+        }
 
-					H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("RangedDamage: {}, CritDamage: {}", iRangedDamage, iCritDamage).c_str());
-					H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("AllDamage: {} ({})", iDamage, iDamage - iRangedDamage).c_str());
-				}
-			}
-		}
-
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("ResourceDamage: {} ({})", m_iResourceDamage, m_iMeleeDamage).c_str());
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("ResourceDamage: {} ({})", m_iResourceDamage, m_iMeleeDamage).c_str());
 #endif
 
-		H::Draw.StringOutlined(fFont, x, y += nTall * 2, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Bucket: {}, Shots: {}, Crits: {}", pWeapon->m_flCritTokenBucket(), pWeapon->m_nCritChecks(), pWeapon->m_nCritSeedRequests()).c_str());
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("Damage: {}, Cost: {}", m_flDamage, m_flCost).c_str());
-		H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, align, std::format("CritChance: {:.2f} ({:.2f})", m_flCritChance, m_flCritChance + 0.1f).c_str());
-	}
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("Bucket: {}, Shots: {}, Crits: {}", pWeapon->m_flCritTokenBucket(), pWeapon->m_nCritChecks(), pWeapon->m_nCritSeedRequests()).c_str());
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("Damage: {}, Cost: {}", m_flDamage, m_flCost).c_str());
+        H::Draw.StringOutlined(fFont, x, y += nTall, Color_t(255, 255, 255, 255), Vars::Menu::Theme::Background.Value, align, std::format("CritChance: {:.2f} ({:.2f})", m_flCritChance, m_flCritChance + 0.1f).c_str());
+    }
 }

@@ -72,8 +72,8 @@ struct AimPoint_t
 	int m_iDuration = 32;
 };
 
-namespace G
-{
+	namespace G
+	{
 	inline bool Unload = false;
 
 	inline int Attacking = 0;
@@ -90,8 +90,8 @@ namespace G
 	inline CUserCmd* LastUserCmd = nullptr;
 	inline CUserCmd OriginalCmd = {};
 
-	inline AimTarget_t AimTarget = {};
-	inline AimPoint_t AimPoint = {};
+		inline AimTarget_t AimTarget = {};
+		inline AimPoint_t AimPoint = {};
 
 	inline bool SilentAngles = false;
 	inline bool PSilentAngles = false;

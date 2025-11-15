@@ -1518,15 +1518,15 @@ int CAimbotProjectile::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBas
 			Vec3 vAngles; Aim(G::CurrentUserCmd->viewangles, { vPoint.m_tSolution.m_flPitch, vPoint.m_tSolution.m_flYaw, 0.f }, vAngles);
 			std::vector<Vec3> vProjLines; bool bHitSolid = false;
 
-			if (TestAngle(pLocal, pWeapon, tTarget, vPoint.m_vPoint, vAngles, i, bSplash, &bHitSolid, &vProjLines))
-			{
-				iLowestPriority = iPriority; flLowestDist = flDist;
-				vAngleTo = vAngles, vPredicted = tTarget.m_vPos, vTarget = vOriginalPoint;
-				m_flTimeTo = vPoint.m_tSolution.m_flTime + m_tInfo.m_flLatency;
-				m_vPlayerPath = tStorage.m_vPath;
-				m_vPlayerPath.push_back(tStorage.m_MoveData.m_vecAbsOrigin);
-				m_vProjectilePath = vProjLines;
-			}
+            if (TestAngle(pLocal, pWeapon, tTarget, vPoint.m_vPoint, vAngles, i, bSplash, &bHitSolid, &vProjLines))
+            {
+                iLowestPriority = iPriority; flLowestDist = flDist;
+                vAngleTo = vAngles, vPredicted = tTarget.m_vPos, vTarget = vOriginalPoint;
+                m_flTimeTo = vPoint.m_tSolution.m_flTime + m_tInfo.m_flLatency;
+                m_vPlayerPath = tStorage.m_vPath;
+                m_vPlayerPath.push_back(tStorage.m_MoveData.m_vecAbsOrigin);
+                m_vProjectilePath = vProjLines;
+            }
 			else switch (Vars::Aimbot::General::AimType.Value)
 			{
 			case Vars::Aimbot::General::AimTypeEnum::Smooth:
@@ -1557,7 +1557,8 @@ int CAimbotProjectile::CanHit(Target_t& tTarget, CTFPlayer* pLocal, CTFWeaponBas
 			j++;
 		}
 	}
-	F::MoveSim.Restore(tStorage);
+    F::MoveSim.Restore(tStorage);
+
 
 	tTarget.m_vPos = vTarget;
 	tTarget.m_vAngleTo = vAngleTo;

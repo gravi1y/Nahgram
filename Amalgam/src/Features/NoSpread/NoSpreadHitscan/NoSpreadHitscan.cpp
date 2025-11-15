@@ -104,19 +104,15 @@ bool CNoSpreadHitscan::ParsePlayerPerf(const std::string& sMsg)
 			m_dTimeDelta = 0.f;
 		else
 		{
-            m_vTimeDeltas.push_back(m_flServerTime - m_dRequestTime + TICKS_TO_TIME(1));
-            while (!m_vTimeDeltas.empty() && m_vTimeDeltas.size() > Vars::Aimbot::General::NoSpreadAverage.Value)
-                m_vTimeDeltas.pop_front();
-            double dAvg = std::reduce(m_vTimeDeltas.begin(), m_vTimeDeltas.end()) / m_vTimeDeltas.size();
-            if (m_vTimeDeltas.size() > 1)
-                m_dTimeDelta = m_dTimeDelta ? m_dTimeDelta * 0.85 + dAvg * 0.15 : dAvg;
-            else
-                m_dTimeDelta = dAvg;
+			m_vTimeDeltas.push_back(m_flServerTime - m_dRequestTime + TICKS_TO_TIME(1));
+			while (!m_vTimeDeltas.empty() && m_vTimeDeltas.size() > Vars::Aimbot::General::NoSpreadAverage.Value)
+				m_vTimeDeltas.pop_front();
+			m_dTimeDelta = std::reduce(m_vTimeDeltas.begin(), m_vTimeDeltas.end()) / m_vTimeDeltas.size();
 		}
 		m_dTimeDelta += TICKS_TO_TIME(Vars::Aimbot::General::NoSpreadOffset.Value);
 
 		float flMantissaStep = CalcMantissaStep(m_flServerTime);
-        m_bSynced = (m_flServerTime >= 1200 && flMantissaStep >= 1.f) || bLoopback;
+		m_bSynced = flMantissaStep >= 1.f || bLoopback;
 
 		if (flMantissaStep > m_flMantissaStep && (m_bSynced || !m_flMantissaStep))
 		{
@@ -205,26 +201,32 @@ void CNoSpreadHitscan::Draw(CTFPlayer* pLocal)
 	//if (!pWeapon || !ShouldRun(pLocal, pWeapon))
 	//	return;
 
-	int x = Vars::Menu::SeedPredictionDisplay.Value.x;
-	int y = Vars::Menu::SeedPredictionDisplay.Value.y + 8;
+    int x = Vars::Menu::SeedPredictionDisplay.Value.x;
+    int y = Vars::Menu::SeedPredictionDisplay.Value.y + 8;
 	const auto& fFont = H::Fonts.GetFont(FONT_INDICATORS);
 	const int nTall = fFont.m_nTall + H::Draw.Scale(1);
 
-	EAlign align = ALIGN_TOP;
-	if (x <= 100 + H::Draw.Scale(50, Scale_Round))
-	{
-		x -= H::Draw.Scale(42, Scale_Round);
-		align = ALIGN_TOPLEFT;
-	}
-	else if (x >= H::Draw.m_nScreenW - 100 - H::Draw.Scale(50, Scale_Round))
-	{
-		x += H::Draw.Scale(42, Scale_Round);
-		align = ALIGN_TOPRIGHT;
-	}
+    EAlign align = ALIGN_TOP;
 
 	const auto& cColor = m_bSynced ? Vars::Menu::Theme::Active.Value : Vars::Menu::Theme::Inactive.Value;
 
-	H::Draw.StringOutlined(fFont, x, y, cColor, Vars::Menu::Theme::Background.Value, align, std::format("Uptime {}", GetFormat(m_flServerTime)).c_str());
+    {
+        int iServerTime = int(m_flServerTime);
+        int iDays = iServerTime / 86400;
+        int iHours = (iServerTime / 3600) % 24;
+        int iMinutes = (iServerTime / 60) % 60;
+        std::string sUptime;
+        if (iDays)
+            sUptime = std::format("Server uptime {} d {} h", iDays, iHours);
+        else if (iHours)
+            sUptime = std::format("Server uptime {} h {} min", iHours, iMinutes);
+        else
+        {
+            int iSeconds = iServerTime % 60;
+            sUptime = std::format("Server uptime {} min {} s", iMinutes, iSeconds);
+        }
+        H::Draw.StringOutlined(fFont, x, y, cColor, Vars::Menu::Theme::Background.Value, align, sUptime.c_str());
+    }
 	H::Draw.StringOutlined(fFont, x, y += nTall, cColor, Vars::Menu::Theme::Background.Value, align, std::format("Mantissa step {}", m_flMantissaStep).c_str());
 	if (Vars::Debug::Info.Value)
 		H::Draw.StringOutlined(fFont, x, y += nTall, cColor, Vars::Menu::Theme::Background.Value, align, std::format("Delta {:.3f}", m_dTimeDelta).c_str());

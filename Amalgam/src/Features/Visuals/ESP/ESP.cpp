@@ -52,11 +52,11 @@ static inline void StorePlayer(CTFPlayer* pPlayer, CTFPlayer* pLocal, Group_t* p
 		{
 			uint32_t uAccountID = pResource->m_iAccountID(iIndex);
 
-			if (pGroup->m_iESP & ESPEnum::Priority)
-			{
-				if (auto pTag = F::PlayerUtils.GetSignificantTag(uAccountID, 1))
-					tCache.m_vText.emplace_back(ALIGN_TOP, pTag->m_sName, pTag->m_tColor, pTag->m_tColor.IsColorDark() ? Color_t(255, 255, 255) : Color_t(0, 0, 0));
-			}
+            if (pGroup->m_iESP & ESPEnum::Priority)
+            {
+                if (auto pTag = F::PlayerUtils.GetSignificantTag(uAccountID, 1))
+                    tCache.m_vText.emplace_back(ALIGN_BOTTOM, pTag->m_sName, pTag->m_tColor, pTag->m_tColor.IsColorDark() ? Color_t(255, 255, 255) : Color_t(0, 0, 0));
+            }
 
 			if (pGroup->m_iESP & ESPEnum::Labels)
 			{
