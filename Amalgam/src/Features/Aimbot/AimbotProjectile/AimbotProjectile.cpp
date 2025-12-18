@@ -420,7 +420,7 @@ static inline std::vector<std::pair<Vec3, int>> ComputeSphere(float flRadius, in
 	std::vector<std::pair<Vec3, int>> vPoints;
 	vPoints.reserve(iSamples + 1);
 
-	// pasted from northern, hopefully this doesnt work like shit or destroy all my fps
+	// pasted from northern, thanks
 	const float flRotateX = (Vars::Aimbot::Projectile::SplashRotateX.Value < 0.f) ?
 		SDK::StdRandomFloat(0.f, 360.f) :
 		Vars::Aimbot::Projectile::SplashRotateX.Value;
@@ -428,6 +428,15 @@ static inline std::vector<std::pair<Vec3, int>> ComputeSphere(float flRadius, in
 	const float flRotateY = (Vars::Aimbot::Projectile::SplashRotateY.Value < 0.f) ?
 		SDK::StdRandomFloat(0.f, 360.f) :
 		Vars::Aimbot::Projectile::SplashRotateY.Value;
+
+	// precompute rotation matrtix
+	float sp, sy, cp, cy;
+	Math::SinCos(DEG2RAD(flRotateX), &sp, &cp);
+	Math::SinCos(DEG2RAD(flRotateY), &sy, &cy);
+
+	const Vec3 vX(cy * cp, -sy, cy * sp);
+	const Vec3 vY(sy * cp, cy, sy * sp);
+	const Vec3 vZ(-sp, 0.f, cp);
 
 	int iPointType = Vars::Aimbot::Projectile::SplashGrates.Value ?
 		(PointTypeEnum::Regular | PointTypeEnum::Obscured) :
@@ -443,28 +452,31 @@ static inline std::vector<std::pair<Vec3, int>> ComputeSphere(float flRadius, in
 
 	for (int i = 0; i < iSamples; ++i) {
 		const float t = (i + 0.5f) * invSamples;
-		const float phi = acosf(1.0f - 2.0f * t); 
 
-		const float sinPhi = sinf(phi);
-		const float cosPhi = cosf(phi);
+		const float z_unit = 1.0f - 2.0f * t;
+		const float sinPhi = sqrtf(1.0f - z_unit * z_unit);
 
 		const float theta = GOLDEN_ANGLE * i;
-		const float cosTheta = cosf(theta);
-		const float sinTheta = sinf(theta);
+		float sinTheta, cosTheta;
+		Math::SinCos(theta, &sinTheta, &cosTheta);
 
-		const float x = cosTheta * sinPhi;
-		const float y = sinTheta * sinPhi;
-		const float z = cosPhi;
+		const float x_unit = cosTheta * sinPhi;
+		const float y_unit = sinTheta * sinPhi;
+		// z_unit is already calculated
 
-		Vec3 vPoint(x * flRadius, y * flRadius, z * flRadius);
-		vPoint = Math::RotatePoint(vPoint, {}, { flRotateX, flRotateY });
+		// manual rotation
+		const float x_final = (vX.x * x_unit + vX.y * y_unit + vX.z * z_unit) * flRadius;
+		const float y_final = (vY.x * x_unit + vY.y * y_unit + vY.z * z_unit) * flRadius;
+		const float z_final = (vZ.x * x_unit + vZ.y * y_unit + vZ.z * z_unit) * flRadius;
 
-		vPoints.emplace_back(vPoint, iPointType);
+		vPoints.emplace_back(Vec3(x_final, y_final, z_final), iPointType);
 	}
 
-	Vec3 vBottom(0.0f, 0.0f, -flRadius);
-	vBottom = Math::RotatePoint(vBottom, {}, { flRotateX, flRotateY });
-	vPoints.emplace_back(vBottom, iPointType);
+	// same here
+	const float bx = vX.z * -flRadius;
+	const float by = vY.z * -flRadius;
+	const float bz = vZ.z * -flRadius;
+	vPoints.emplace_back(Vec3(bx, by, bz), iPointType);
 
 	return vPoints;
 };

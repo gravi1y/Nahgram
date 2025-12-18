@@ -43,7 +43,9 @@ private:
 	bool SetupMoveData(MoveStorage& tStorage);
 	void GetAverageYaw(MoveStorage& tStorage, int iSamples);
 	bool StrafePrediction(MoveStorage& tStorage, int iSamples);
-	bool CounterStrafePrediction(MoveStorage& tStorage, int iSamples);
+
+	void SetBounds(CTFPlayer* pPlayer);
+	void RestoreBounds(CTFPlayer* pPlayer);
 
 	bool m_bOldInPrediction = false;
 	bool m_bOldFirstTimePredicted = false;
