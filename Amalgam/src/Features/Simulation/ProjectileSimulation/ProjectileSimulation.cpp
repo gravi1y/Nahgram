@@ -4,8 +4,7 @@
 #include "../../CritHack/CritHack.h"
 #include "../../Backtrack/Backtrack.h"
 
-#define k_flMaxVelocity 2000.f
-#define k_flMaxAngularVelocity 360.f * 10.f
+
 
 bool CProjectileSimulation::GetInfoMain(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, Vec3 vAngles, ProjectileInfo& tProjInfo, int iFlags, float flAutoCharge)
 {

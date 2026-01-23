@@ -2537,7 +2537,7 @@ bool CAimbotProjectile::AutoAirblast(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, 
 		G::Attacking = true;
 		DrawVisuals(1, tTarget, m_vPlayerPath, m_vProjectilePath, m_vBoxes);
 
-		Aim(pCmd, tTarget.m_vAngleTo, Vars::Aimbot::General::AimTypeEnum::Silent);
+		Aim(pCmd, tTarget.m_vAngleTo, (int)Vars::Aimbot::General::AimTypeEnum::Silent);
 		return true;
 	}
 

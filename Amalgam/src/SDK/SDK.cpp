@@ -140,19 +140,7 @@ std::string SDK::ConvertWideToUTF8(const std::wstring& source)
 	return result;
 }
 
-HWND SDK::GetTeamFortressWindow()
-{
-	static HWND hWindow = nullptr;
-	if (!hWindow)
-		EnumWindows(TeamFortressWindow, reinterpret_cast<LPARAM>(&hWindow));
-	return hWindow;
-}
 
-bool SDK::IsGameWindowInFocus()
-{
-	HWND hWindow = GetTeamFortressWindow();
-	return hWindow == GetForegroundWindow() || !hWindow;
-}
 
 double SDK::PlatFloatTime()
 {

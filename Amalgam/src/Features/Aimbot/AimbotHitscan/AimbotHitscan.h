@@ -20,6 +20,7 @@ private:
 
 public:
 	void Run(CTFPlayer* pLocal, CTFWeaponBase* pWeapon, CUserCmd* pCmd);
+	static std::vector<Target_t> GetTargets(CTFPlayer* pLocal, CTFWeaponBase* pWeapon);
 };
 
 ADD_FEATURE(CAimbotHitscan, AimbotHitscan);

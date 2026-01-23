@@ -30,7 +30,7 @@ struct Group_t
 
 	Glow_t m_tGlow = {};
 
-	bool m_bBacktrack = false;
+	int m_iBacktrack = 0b0;
 	int m_iBacktrackDraw = 0b0;
 	std::vector<std::pair<std::string, Color_t>> m_vBacktrackChams = {};
 	Glow_t m_tBacktrackGlow = {};
@@ -44,8 +44,8 @@ struct Group_t
 	float m_flOffscreenArcWidthMaxDeg = 90.f;
 	int m_iOffscreenArcMaxPlayers = 5;
 
-	bool m_bSightlines = false;
-	bool m_bSightlinesIgnoreZ = true;
+	int m_iTrajectory = 0b0;
+	int m_iSightlines = 0b0;
 
 	bool m_bPickupTimer = false;
 };
