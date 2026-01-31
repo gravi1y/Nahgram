@@ -100,10 +100,10 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 
 	tProjInfo.m_vPath.push_back(trace.endpos);
 
-	float flRadius = 0.f;
-	Vec3 vEndPos = trace.endpos;
-	if ((bQuick ? Vars::Visuals::Simulation::TrajectoryPath.Value : Vars::Visuals::Simulation::ShotPath.Value) && Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Enabled)
+	std::vector<Vec3> vPoints = {};
+	if ((bQuick ? Vars::Visuals::Simulation::TrajectoryPath.Value : Vars::Visuals::Simulation::ShotPath.Value) && Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Simulation)
 	{
+		float flRadius = 0.f;
 		switch (pWeapon->GetWeaponID())
 		{
 		case TF_WEAPON_ROCKETLAUNCHER:
@@ -128,17 +128,19 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 
 		if (flRadius)
 		{
+			Vec3 vEndPos = trace.endpos;
 			flRadius = SDK::AttribHookValue(flRadius, "mult_explosion_radius", pWeapon);
 			switch (pWeapon->GetWeaponID())
 			{
 			case TF_WEAPON_ROCKETLAUNCHER:
 			case TF_WEAPON_ROCKETLAUNCHER_DIRECTHIT:
 			case TF_WEAPON_PARTICLE_CANNON:
-				if (pPlayer->InCond(TF_COND_BLASTJUMPING) && SDK::AttribHookValue(1.f, "rocketjump_attackrate_bonus", pWeapon) != 1.f)
-					flRadius *= 0.8f;
 				if (pNormal)
 					vEndPos += *pNormal;
+				if (pPlayer->InCond(TF_COND_BLASTJUMPING) && SDK::AttribHookValue(1.f, "rocketjump_attackrate_bonus", pWeapon) != 1.f)
+					flRadius *= 0.8f;
 			}
+			vPoints = SplashTrace(vEndPos, flRadius, pNormal ? *pNormal : Vec3(0, 0, 1), Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Trace);
 		}
 	}
 
@@ -172,19 +174,10 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 				H::Draw.RenderWireframeBox(trace.endpos, vSize * -1, vSize, vAngles, Vars::Colors::TrajectoryPath.Value, true);
 			}
 
-			if (flRadius)
+			if (!vPoints.empty())
 			{
-				if (!(Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Sphere))
-				{
-					auto vPoints = SplashTrace(vEndPos, flRadius, pNormal ? *pNormal : Vec3(0, 0, 1), Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Trace);
-					H::Draw.RenderPath(vPoints, Vars::Colors::SplashRadiusIgnoreZ.Value, false, Vars::Visuals::Simulation::StyleEnum::Line);
-					H::Draw.RenderPath(vPoints, Vars::Colors::SplashRadius.Value, true, Vars::Visuals::Simulation::StyleEnum::Line);
-				}
-				else
-				{
-					H::Draw.RenderSphere(vEndPos, flRadius, 36, 36, Vars::Colors::SplashRadiusIgnoreZ.Value);
-					H::Draw.RenderSphere(vEndPos, flRadius, 36, 36, Vars::Colors::SplashRadius.Value, true);
-				}
+				H::Draw.RenderPath(vPoints, Vars::Colors::SplashRadiusIgnoreZ.Value, false, Vars::Visuals::Simulation::StyleEnum::Line);
+				H::Draw.RenderPath(vPoints, Vars::Colors::SplashRadius.Value, true, Vars::Visuals::Simulation::StyleEnum::Line);
 			}
 		}
 	}
@@ -210,49 +203,79 @@ void CVisuals::ProjectileTrace(CTFPlayer* pPlayer, CTFWeaponBase* pWeapon, const
 				G::BoxStorage.emplace_back(trace.endpos, vSize * -1, vSize, vAngles, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Vars::Colors::ShotPath.Value, Color_t(0, 0, 0, 0), true);
 		}
 
-		if (flRadius)
+		if (!vPoints.empty())
 		{
-			if (!(Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Sphere))
-			{
-				std::vector<Vec3> vPoints = SplashTrace(vEndPos, flRadius, pNormal ? *pNormal : Vec3(0, 0, 1), Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Trace);
-				if (Vars::Colors::SplashRadiusIgnoreZ.Value.a)
-					G::PathStorage.emplace_back(vPoints, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Vars::Colors::SplashRadiusIgnoreZ.Value, Vars::Visuals::Simulation::StyleEnum::Line);
-				if (Vars::Colors::SplashRadius.Value.a)
-					G::PathStorage.emplace_back(vPoints, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Vars::Colors::SplashRadius.Value, Vars::Visuals::Simulation::StyleEnum::Line, true);
-			}
-			else
-			{
-				if (Vars::Colors::SplashRadiusIgnoreZ.Value.a)
-					G::SphereStorage.emplace_back(vEndPos, flRadius, 36, 36, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Color_t(), Vars::Colors::SplashRadiusIgnoreZ.Value);
-				if (Vars::Colors::SplashRadius.Value.a)
-					G::SphereStorage.emplace_back(vEndPos, flRadius, 36, 36, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Color_t(), Vars::Colors::SplashRadius.Value, true);
-			}
+			if (Vars::Colors::SplashRadiusIgnoreZ.Value.a)
+				G::PathStorage.emplace_back(vPoints, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Vars::Colors::SplashRadiusIgnoreZ.Value, Vars::Visuals::Simulation::StyleEnum::Line);
+			if (Vars::Colors::SplashRadius.Value.a)
+				G::PathStorage.emplace_back(vPoints, I::GlobalVars->curtime + TICKS_TO_TIME(tProjInfo.m_vPath.size()) + F::Backtrack.GetReal(), Vars::Colors::SplashRadius.Value, Vars::Visuals::Simulation::StyleEnum::Line, true);
 		}
 	}
 }
 
-void CVisuals::DrawPickupTimers()
+void CVisuals::SplashRadius(CTFPlayer* pLocal)
 {
-	if (!F::Groups.GroupsActive())
+	if (!Vars::Visuals::Simulation::SplashRadius.Value)
 		return;
 
-	for (auto it = m_vPickups.begin(); it != m_vPickups.end();)
+	for (auto pEntity : H::Entities.GetGroup(EntityEnum::WorldProjectile))
 	{
-		auto& tPickup = *it;
+		bool bShouldDraw = false;
+		CTFPlayer* pOwner = nullptr;
+		CTFWeaponBase* pWeapon = nullptr;
 
-		Group_t* pGroup = nullptr;
-		float flTime = tPickup.m_flTime - I::GlobalVars->curtime;
-		if (!F::Groups.GetGroup(tPickup.m_iType, pGroup) || !pGroup->m_bPickupTimer || flTime < 0.f)
+		switch (pEntity->GetClassID())
 		{
-			it = m_vPickups.erase(it);
-			continue;
+		case ETFClassID::CTFWeaponBaseGrenadeProj:
+		case ETFClassID::CTFWeaponBaseMerasmusGrenade:
+		case ETFClassID::CTFGrenadePipebombProjectile:
+			bShouldDraw = Vars::Visuals::Simulation::SplashRadius.Value & (pEntity->As<CTFGrenadePipebombProjectile>()->HasStickyEffects() ? Vars::Visuals::Simulation::SplashRadiusEnum::Stickies : Vars::Visuals::Simulation::SplashRadiusEnum::Pipes);
+			break;
+		case ETFClassID::CTFProjectile_Rocket:
+		case ETFClassID::CTFProjectile_SentryRocket:
+		case ETFClassID::CTFProjectile_EnergyBall:
+			bShouldDraw = Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Rockets;
+			break;
+		case ETFClassID::CTFProjectile_Flare:
+			if (Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::ScorchShot)
+			{
+				pWeapon = pEntity->As<CTFProjectile_Flare>()->m_hLauncher()->As<CTFWeaponBase>();
+				bShouldDraw = pWeapon && pWeapon->As<CTFFlareGun>()->GetFlareGunType() == FLAREGUN_SCORCHSHOT;
+			}
 		}
+		if (!bShouldDraw)
+			continue;
 
-		Vec3 vScreen;
-		if (SDK::W2S(tPickup.m_vLocation, vScreen))
-			H::Draw.StringOutlined(H::Fonts.GetFont(FONT_ESP), vScreen.x, vScreen.y, pGroup->m_tColor, Vars::Menu::Theme::Background.Value, ALIGN_CENTER, std::format("{:.1f}s", flTime).c_str());
+		switch (pEntity->GetClassID())
+		{
+		case ETFClassID::CTFWeaponBaseGrenadeProj:
+		case ETFClassID::CTFWeaponBaseMerasmusGrenade:
+		case ETFClassID::CTFGrenadePipebombProjectile:
+			pOwner = pEntity->As<CTFGrenadePipebombProjectile>()->m_hThrower()->As<CTFPlayer>();
+			break;
+		case ETFClassID::CTFProjectile_Rocket:
+		case ETFClassID::CTFProjectile_SentryRocket:
+		case ETFClassID::CTFProjectile_EnergyBall:
+		case ETFClassID::CTFProjectile_Flare:
+			pOwner = pEntity->m_hOwnerEntity()->As<CTFPlayer>();
+		}
+		if (!pOwner || !pOwner->IsPlayer())
+			continue;
+		else if (pOwner->entindex() != I::EngineClient->GetLocalPlayer())
+		{
+			if (!(Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Priority && F::PlayerUtils.IsPrioritized(pOwner->entindex()))
+				&& !(Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Friends && H::Entities.IsFriend(pOwner->entindex()))
+				&& !(Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Party && H::Entities.InParty(pOwner->entindex()))
+				&& !(pOwner->m_iTeamNum() != pLocal->m_iTeamNum() ? Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Enemy : Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Team))
+				continue;
+		}
+		else if (!(Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Local))
+			continue;
 
-		it++;
+		float flRadius = F::AimbotProjectile.GetSplashRadius(pEntity, pWeapon, pOwner);
+		auto vPoints = SplashTrace(pEntity->GetAbsOrigin(), flRadius, { 0, 0, 1 }, Vars::Visuals::Simulation::SplashRadius.Value & Vars::Visuals::Simulation::SplashRadiusEnum::Trace);
+		H::Draw.RenderPath(vPoints, Vars::Colors::SplashRadiusIgnoreZ.Value, false, Vars::Visuals::Simulation::StyleEnum::Line);
+		H::Draw.RenderPath(vPoints, Vars::Colors::SplashRadius.Value, true, Vars::Visuals::Simulation::StyleEnum::Line);
 	}
 }
 
@@ -282,26 +305,43 @@ void CVisuals::DrawAntiAim(CTFPlayer* pLocal)
 	}
 }
 
+void CVisuals::DrawPickupTimers()
+{
+	if (!F::Groups.GroupsActive())
+		return;
+
+	for (auto it = m_vPickups.begin(); it != m_vPickups.end();)
+	{
+		auto& tPickup = *it;
+
+		Group_t* pGroup = nullptr;
+		float flTime = tPickup.m_flTime - I::GlobalVars->curtime;
+		if (!F::Groups.GetGroup(tPickup.m_iType, pGroup) || !pGroup->m_bPickupTimer || flTime < 0.f)
+		{
+			it = m_vPickups.erase(it);
+			continue;
+		}
+
+		Vec3 vScreen;
+		if (SDK::W2S(tPickup.m_vLocation, vScreen))
+			H::Draw.StringOutlined(H::Fonts.GetFont(FONT_ESP), vScreen.x, vScreen.y, pGroup->m_tColor, Vars::Menu::Theme::Background.Value, ALIGN_CENTER, std::format("{:.1f}s", flTime).c_str());
+
+		it++;
+	}
+}
+
 #define PAIR(x) { x, #x }
 void CVisuals::DrawDebugInfo(CTFPlayer* pLocal)
 {
-#ifdef DEBUG_TEXT
-	if (!Vars::Debug::Info.Value && m_vDebugText.empty())
-		return;
-#else
-	if (!Vars::Debug::Info.Value)
-		return;
-#endif
-
-	int x = 10, y = 10;
-	const auto& fFont = H::Fonts.GetFont(FONT_INDICATORS);
-	const int nTall = fFont.m_nTall + H::Draw.Scale(1);
-	y -= nTall;
-
 	if (Vars::Debug::Info.Value)
 	{
 		auto pWeapon = H::Entities.GetWeapon();
 		auto pCmd = !I::EngineClient->IsPlayingDemo() ? G::LastUserCmd : I::Input->GetUserCmd(I::ClientState->lastoutgoingcommand);
+
+		int x = 10, y = 10;
+		const auto& fFont = H::Fonts.GetFont(FONT_INDICATORS);
+		const int nTall = fFont.m_nTall + H::Draw.Scale(1);
+		y -= nTall;
 
 		if (pCmd)
 		{
@@ -378,8 +418,7 @@ void CVisuals::DrawDebugInfo(CTFPlayer* pLocal)
 			float flSecondaryAttack = pWeapon->m_flNextSecondaryAttack();
 			float flAttack = pLocal->m_flNextAttack();
 
-			y += nTall;
-			H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, std::format("Weapon: {}, {}", pWeapon->GetSlot(), pWeapon->GetWeaponID()).c_str());
+			H::Draw.StringOutlined(fFont, x, y += nTall * 2, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, std::format("Weapon: {}, {}", pWeapon->GetSlot(), pWeapon->GetWeaponID()).c_str());
 			H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, std::format("Attacking: {}", G::Attacking).c_str());
 			H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, std::format("CanPrimaryAttack: {} ([{:.3f} | {:.3f}] <= {:.3f})", G::CanPrimaryAttack, flPrimaryAttack, flAttack, flTime).c_str());
 			H::Draw.StringOutlined(fFont, x, y += nTall, Vars::Menu::Theme::Active.Value, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, std::format("CanSecondaryAttack: {} ([{:.3f} | {:.3f}] <= {:.3f})", G::CanSecondaryAttack, flSecondaryAttack, flAttack, flTime).c_str());
@@ -389,30 +428,7 @@ void CVisuals::DrawDebugInfo(CTFPlayer* pLocal)
 		}
 		*/
 	}
-
-#ifdef DEBUG_TEXT
-	if (!m_vDebugText.empty())
-	{
-		if (Vars::Debug::Info.Value)
-			y += nTall;
-		for (auto& [sString, tColor] : m_vDebugText)
-			H::Draw.StringOutlined(fFont, x, y += nTall, tColor, Vars::Menu::Theme::Background.Value, ALIGN_TOPLEFT, sString.c_str());
-	}
-#endif
 }
-
-#ifdef DEBUG_TEXT
-void CVisuals::AddDebugText(const std::string& sString, Color_t tColor)
-{
-	m_vDebugText.emplace_back(sString, tColor);
-}
-
-void CVisuals::ClearDebugText()
-{
-	m_vDebugText.clear();
-}
-#endif
-
 #undef PAIR
 
 
@@ -509,53 +525,28 @@ void CVisuals::DrawEffects()
 		H::Draw.RenderBox(tBox.m_vOrigin, tBox.m_vMins, tBox.m_vMaxs, tBox.m_vAngles, tBox.m_tColorFace, tBox.m_bZBuffer);
 		H::Draw.RenderWireframeBox(tBox.m_vOrigin, tBox.m_vMins, tBox.m_vMaxs, tBox.m_vAngles, tBox.m_tColorEdge, tBox.m_bZBuffer);
 	}
-	for (auto& tSphere : G::SphereStorage)
+	for (auto& tBox : G::SphereStorage)
 	{
-		if (tSphere.m_flTime < I::GlobalVars->curtime)
+		if (tBox.m_flTime < I::GlobalVars->curtime)
 			continue;
 
-		H::Draw.RenderSphere(tSphere.m_vOrigin, tSphere.m_flRadius, tSphere.m_nTheta, tSphere.m_nPhi, tSphere.m_tColorFace, tSphere.m_bZBuffer);
-		H::Draw.RenderWireframeSphere(tSphere.m_vOrigin, tSphere.m_flRadius, tSphere.m_nTheta, tSphere.m_nPhi, tSphere.m_tColorEdge, tSphere.m_bZBuffer);
+		H::Draw.RenderSphere(tBox.m_vOrigin, tBox.m_flRadius, tBox.m_nTheta, tBox.m_nPhi, tBox.m_tColorFace, tBox.m_bZBuffer);
+		H::Draw.RenderWireframeSphere(tBox.m_vOrigin, tBox.m_flRadius, tBox.m_nTheta, tBox.m_nPhi, tBox.m_tColorEdge, tBox.m_bZBuffer);
 	}
-	for (auto& tSwept : G::SweptStorage)
+	for (auto& tBox : G::SweptStorage)
 	{
-		if (tSwept.m_flTime < I::GlobalVars->curtime)
+		if (tBox.m_flTime < I::GlobalVars->curtime)
 			continue;
 
-		H::Draw.RenderWireframeSweptBox(tSwept.m_paOrigin.first, tSwept.m_paOrigin.second, tSwept.m_vMins, tSwept.m_vMaxs, tSwept.m_vAngles, tSwept.m_tColor, tSwept.m_bZBuffer);
+		H::Draw.RenderWireframeSweptBox(tBox.m_paOrigin.first, tBox.m_paOrigin.second, tBox.m_vMins, tBox.m_vMaxs, tBox.m_vAngles, tBox.m_tColor, tBox.m_bZBuffer);
 	}
+	for (auto& tSightline : m_vSightLines)
+		H::Draw.RenderLine(tSightline.m_vStart, tSightline.m_vEnd, tSightline.m_Color, tSightline.m_bZBuffer);
 	if (auto& tPath = F::Aimbot.m_tPath; tPath.m_flTime)
 	{
 		H::Draw.RenderPath(tPath.m_vPath, Vars::Colors::RealPath.Value, true, tPath.m_iStyle, tPath.m_flTime);
 		H::Draw.RenderPath(tPath.m_vPath, Vars::Colors::RealPathIgnoreZ.Value, false, tPath.m_iStyle, tPath.m_flTime);
 	}
-
-	for (auto& tSightline : m_vSightLines)
-		H::Draw.RenderLine(tSightline.m_vStart, tSightline.m_vEnd, tSightline.m_tColor, tSightline.m_bZBuffer);
-
-	for (auto& [pEntity, tProjectile] : m_mProjectiles)
-	{
-		bool bZBuffer = !(tProjectile.m_iFlags & TrajectoryEnum::IgnoreZ);
-		bool bPredict = tProjectile.m_iFlags & TrajectoryEnum::Predict && tProjectile.m_vPath.size() && tProjectile.m_flTime;
-
-		if (bPredict && tProjectile.m_iFlags & TrajectoryEnum::Path)
-			H::Draw.RenderPath(tProjectile.m_vPath, tProjectile.m_tColor, bZBuffer, Vars::Visuals::Simulation::StyleEnum::Line, tProjectile.m_flTime);
-
-		if (tProjectile.m_iFlags & TrajectoryEnum::Radius)
-		{
-			Vec3 vOrigin = bPredict ? tProjectile.m_vPath.back() : pEntity->GetAbsOrigin();
-			Vec3 vNormal = bPredict ? tProjectile.m_vNormal : Vec3(0, 0, 1);
-
-			if (!(tProjectile.m_iFlags & TrajectoryEnum::Sphere))
-			{
-				auto vPoints = SplashTrace(vOrigin, tProjectile.m_flRadius, vNormal, tProjectile.m_iFlags & TrajectoryEnum::Trace);
-				H::Draw.RenderPath(vPoints, tProjectile.m_tColor, bZBuffer, Vars::Visuals::Simulation::StyleEnum::Line);
-			}
-			else
-				H::Draw.RenderSphere(vOrigin, tProjectile.m_flRadius, 36, 36, tProjectile.m_tColor, bZBuffer);
-		}
-	}
-
 	DrawHitboxes();
 }
 
@@ -626,11 +617,6 @@ void CVisuals::DrawHitboxes(int iStore)
 MAKE_HOOK(CBaseAnimating_DrawServerHitboxes, S::CBaseAnimating_DrawServerHitboxes(), void,
 	void* rcx, float duration, bool monocolor)
 {
-#ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::CBaseAnimating_DrawServerHitboxes[DEFAULT_BIND])
-		return CALL_ORIGINAL(rcx, duration, monocolor);
-#endif
-
 	if (s_bBoxesHeadOnly)
 		monocolor = false;
 
@@ -640,14 +626,9 @@ MAKE_HOOK(CBaseAnimating_DrawServerHitboxes, S::CBaseAnimating_DrawServerHitboxe
 MAKE_HOOK(NDebugOverlay_BoxAngles, S::NDebugOverlay_BoxAngles(), void,
 	Vector& origin, Vector& mins, Vector& maxs, QAngle& angles, int r, int g, int b, int a, float duration)
 {
-#ifdef DEBUG_HOOKS
-	if (!Vars::Hooks::NDebugOverlay_BoxAngles[DEFAULT_BIND])
-		return CALL_ORIGINAL(origin, mins, maxs, angles, r, g, b, a, duration);
-#endif
-
 	if (s_bBoxesHeadOnly)
 	{
-		const auto dwDesired = S::CBaseAnimating_DrawServerHitboxes_BoxAngles_Call();
+		static const auto dwDesired = S::CBaseAnimating_DrawServerHitboxes_BoxAngles_Call();
 		const auto dwRetAddr = uintptr_t(_ReturnAddress());
 
 		if (dwRetAddr == dwDesired && (r != 255 || g != 127 || b != 127))
@@ -671,7 +652,6 @@ MAKE_HOOK(NDebugOverlay_BoxAngles, S::NDebugOverlay_BoxAngles(), void,
 void CVisuals::FOV(CTFPlayer* pLocal, CViewSetup* pView)
 {
 	static auto fov_desired = H::ConVars.FindVar("fov_desired");
-	static auto default_fov = H::ConVars.FindVar("default_fov");
 	bool bZoomed = pLocal->InCond(TF_COND_ZOOMED);
 
 	float flRegularFOV = fov_desired->GetFloat();
@@ -679,8 +659,6 @@ void CVisuals::FOV(CTFPlayer* pLocal, CViewSetup* pView)
 
 	float flRegularOverride = Vars::Visuals::UI::FieldOfView.Value;
 	float flZoomOverride = Vars::Visuals::UI::ZoomFieldOfView.Value;
-	if (SDK::CleanScreenshot())
-		flRegularOverride = flZoomOverride = 0.f;
 
 	if (flRegularOverride || flZoomOverride)
 	{
@@ -700,13 +678,8 @@ void CVisuals::FOV(CTFPlayer* pLocal, CViewSetup* pView)
 		}
 	}
 
-	F::Aimbot.m_flFOV = pView->fov;
-	if (pLocal->IsAlive())
-	{
-		pLocal->m_iFOV() = pView->fov;
-		pLocal->m_iDefaultFOV() = std::max(flRegularOverride, flRegularFOV);
-		default_fov->SetValue(pLocal->m_iDefaultFOV());
-	}
+	pLocal->m_iFOV() = pView->fov;
+	pLocal->m_iDefaultFOV() = std::max(flRegularOverride, flRegularFOV);
 }
 
 void CVisuals::ThirdPerson(CTFPlayer* pLocal, CViewSetup* pView)
@@ -718,7 +691,7 @@ void CVisuals::ThirdPerson(CTFPlayer* pLocal, CViewSetup* pView)
 	//if (bForce)
 	//	return;
 
-	if (Vars::Visuals::Thirdperson::Enabled.Value && !SDK::CleanScreenshot() || bForce)
+	if (Vars::Visuals::Thirdperson::Enabled.Value || bForce)
 		I::Input->CAM_ToThirdPerson();
 	else
 		I::Input->CAM_ToFirstPerson();
@@ -842,159 +815,42 @@ void CVisuals::Event(IGameEvent* pEvent, uint32_t uHash)
 	}
 }
 
-void CVisuals::Store()
+void CVisuals::Store(CTFPlayer* pLocal)
 {
 	m_vSightLines.clear();
-	if (!F::Groups.GroupsActive())
+	if (!pLocal || !F::Groups.GroupsActive())
 		return;
 
-	Group_t* pGroup;
-
+	std::unordered_map<IClientEntity*, Vec3> mDots = {};
+	for (auto pEntity : H::Entities.GetGroup(EntityEnum::SniperDots))
 	{
-		std::unordered_map<CBaseEntity*, bool> mProjectiles = {};
-
-		for (auto pEntity : H::Entities.GetGroup(EntityEnum::WorldProjectile))
-		{
-			if (!F::Groups.GetGroup(pEntity, pGroup, false) || !(pGroup->m_iTrajectory & TrajectoryEnum::Enabled))
-				continue;
-
-			bool bContains = m_mProjectiles.contains(pEntity);
-			Projectile_t& tProjectile = m_mProjectiles[pEntity];
-			mProjectiles[pEntity];
-
-			ProjectileInfo tProjInfo = {};
-			F::ProjSim.GetInfo(pEntity, tProjInfo);
-
-			tProjectile.m_tColor = F::Groups.GetColor(pEntity, pGroup);
-			tProjectile.m_iFlags = pGroup->m_iTrajectory;
-			tProjectile.m_flRadius = F::AimbotProjectile.GetSplashRadius(pEntity, tProjInfo.m_pWeapon, tProjInfo.m_pOwner);
-
-			if (tProjInfo.m_flVelocity < 1.5f)
-			{
-				if (!tProjInfo.m_flVelocity)
-					tProjectile.m_flTime = 0.f;
-				continue;
-			}
-
-			bool bUnreliable = false;
-			switch (pEntity->GetClassID())
-			{
-			case ETFClassID::CBaseGrenade:
-			case ETFClassID::CTFWeaponBaseGrenadeProj:
-			case ETFClassID::CTFWeaponBaseMerasmusGrenade:
-			case ETFClassID::CTFGrenadePipebombProjectile:
-			case ETFClassID::CTFStunBall:
-			case ETFClassID::CTFBall_Ornament:
-			case ETFClassID::CTFProjectile_Jar:
-			case ETFClassID::CTFProjectile_Cleaver:
-			case ETFClassID::CTFProjectile_JarGas:
-			case ETFClassID::CTFProjectile_JarMilk:
-			case ETFClassID::CTFProjectile_SpellBats:
-			case ETFClassID::CTFProjectile_SpellKartBats:
-			case ETFClassID::CTFProjectile_SpellMeteorShower:
-			case ETFClassID::CTFProjectile_SpellMirv:
-			case ETFClassID::CTFProjectile_SpellPumpkin:
-			case ETFClassID::CTFProjectile_SpellSpawnBoss:
-			case ETFClassID::CTFProjectile_SpellSpawnHorde:
-			case ETFClassID::CTFProjectile_SpellSpawnZombie:
-			case ETFClassID::CTFProjectile_SpellTransposeTeleport:
-			case ETFClassID::CTFProjectile_Throwable:
-			case ETFClassID::CTFProjectile_ThrowableBreadMonster:
-			case ETFClassID::CTFProjectile_ThrowableBrick:
-			case ETFClassID::CTFProjectile_ThrowableRepel:
-			case ETFClassID::CTFProjectile_SpellFireball:
-			case ETFClassID::CTFProjectile_SpellLightningOrb:
-				bUnreliable = true;
-			}
-
-			if (tProjectile.m_iFlags & TrajectoryEnum::Predict
-				&& (tProjectile.m_vPath.size() <= 1 || bUnreliable && tProjectile.m_vPath.size() + int(tProjectile.m_flTime) > TIME_TO_TICKS(0.5f)))
-			{
-				if (!F::ProjSim.Initialize(tProjInfo, false, true))
-					continue;
-
-				CGameTrace trace = {};
-				CTraceFilterCollideable filter = {};
-				filter.pSkip = tProjInfo.m_pOwner;
-				int nMask = MASK_SOLID;
-				F::ProjSim.SetupTrace(filter, nMask, pEntity);
-
-				int iTicks = TIME_TO_TICKS(std::min(tProjInfo.m_flLifetime, 10.f));
-				for (int n = 1; n <= iTicks; n++)
-				{
-					Vec3 Old = F::ProjSim.GetOrigin();
-					F::ProjSim.RunTick(tProjInfo);
-					Vec3 New = F::ProjSim.GetOrigin();
-
-					SDK::TraceHull(Old, New, tProjInfo.m_vHull * -1, tProjInfo.m_vHull, nMask, &filter, &trace);
-					if (trace.DidHit())
-					{
-						tProjectile.m_vNormal = trace.plane.normal;
-						if (trace.startsolid)
-							tProjectile.m_vNormal = F::ProjSim.GetVelocity().Normalized();
-						break;
-					}
-				}
-
-				tProjectile.m_vPath = tProjInfo.m_vPath;
-				tProjectile.m_flTime = -int(tProjInfo.m_vPath.size());
-			}
-		}
-
-		for (auto& [pEntity, tProjectile] : m_mProjectiles)
-		{
-			if (!mProjectiles.contains(pEntity))
-				m_mProjectiles.erase(pEntity);
-		}
+		if (auto pOwner = pEntity->m_hOwnerEntity().Get())
+			mDots[pOwner] = pEntity->m_vecOrigin();
 	}
 
+	Group_t* pGroup = nullptr;
+	for (auto pEntity : H::Entities.GetGroup(EntityEnum::PlayerAll))
 	{
-		std::unordered_map<IClientEntity*, Vec3> mDots = {};
+		auto pPlayer = pEntity->As<CTFPlayer>();
+		if (pPlayer == pLocal
+			|| !F::Groups.GetGroup(pEntity, pGroup, false) || !pGroup->m_bSightlines)
+			continue;
+		
+		auto pWeapon = pPlayer->m_hActiveWeapon()->As<CTFWeaponBase>();
+		if (!pPlayer->InCond(TF_COND_AIMING) ||
+			!pWeapon || pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN)
+			continue;
 
-		for (auto pEntity : H::Entities.GetGroup(EntityEnum::SniperDots))
-		{
-			if (auto pOwner = pEntity->m_hOwnerEntity().Get())
-				mDots[pOwner] = pEntity->m_vecOrigin();
-		}
+		Vec3 vShootPos = pPlayer->m_vecOrigin() + pPlayer->GetViewOffset();
+		Vec3 vForward; Math::AngleVectors(pPlayer->GetEyeAngles(), &vForward);
+		Vec3 vShootEnd = mDots.contains(pPlayer) ? mDots[pPlayer] : vShootPos + (vForward * 8192.f);
 
-		for (auto pEntity : H::Entities.GetGroup(EntityEnum::PlayerAll))
-		{
-			auto pPlayer = pEntity->As<CTFPlayer>();
-			if (pPlayer->entindex() == I::EngineClient->GetLocalPlayer()
-				|| !F::Groups.GetGroup(pEntity, pGroup, false) || !(pGroup->m_iSightlines & SightlinesEnum::Enabled))
-				continue;
+		CGameTrace trace = {};
+		CTraceFilterHitscan filter = {};
+		filter.pSkip = pPlayer;
+		SDK::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
 
-			auto pWeapon = pPlayer->m_hActiveWeapon()->As<CTFWeaponBase>();
-			if (!pPlayer->InCond(TF_COND_AIMING) ||
-				!pWeapon || pWeapon->GetWeaponID() == TF_WEAPON_COMPOUND_BOW || pWeapon->GetWeaponID() == TF_WEAPON_MINIGUN)
-				continue;
-
-			Vec3 vShootPos = pPlayer->m_vecOrigin() + pPlayer->GetViewOffset();
-			Vec3 vForward; Math::AngleVectors(pPlayer->GetEyeAngles(), &vForward);
-			Vec3 vShootEnd = mDots.contains(pPlayer) ? mDots[pPlayer] : vShootPos + (vForward * 8192.f);
-
-			CGameTrace trace = {};
-			CTraceFilterHitscan filter = {};
-			filter.pSkip = pPlayer;
-			SDK::Trace(vShootPos, vShootEnd, MASK_SHOT, &filter, &trace);
-
-			m_vSightLines.emplace_back(vShootPos, trace.endpos, F::Groups.GetColor(pPlayer, pGroup), !(pGroup->m_iSightlines & SightlinesEnum::IgnoreZ));
-		}
-	}
-}
-
-void CVisuals::Tick()
-{
-	for (auto& tPath : G::PathStorage)
-	{
-		if (tPath.m_flTime < 0.f)
-			tPath.m_flTime = std::min(tPath.m_flTime + 1.f, 0.f);
-	}
-
-	for (auto& [_, tProjectile] : m_mProjectiles)
-	{
-		if (tProjectile.m_flTime < 0.f)
-			tProjectile.m_flTime = std::min(tProjectile.m_flTime + 1.f, 0.f);
+		m_vSightLines.emplace_back(vShootPos, trace.endpos, F::Groups.GetColor(pPlayer, pGroup), !pGroup->m_bSightlinesIgnoreZ);
 	}
 }
 
@@ -1082,7 +938,7 @@ static inline void ApplyModulation(Color_t tColor, bool bSky = false)
 
 void CVisuals::Modulate()
 {
-	const bool bScreenshot = SDK::CleanScreenshot();
+	const bool bScreenshot = Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot();
 	const bool bWorldModulation = Vars::Visuals::World::Modulations.Value & Vars::Visuals::World::ModulationsEnum::World && !bScreenshot;
 	const bool bSkyModulation = Vars::Visuals::World::Modulations.Value & Vars::Visuals::World::ModulationsEnum::Sky && !bScreenshot;
 

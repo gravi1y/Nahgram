@@ -28,11 +28,8 @@ MAKE_HOOK(TF_IsHolidayActive, S::TF_IsHolidayActive(), bool,
 		return CALL_ORIGINAL(eHoliday);
 #endif
 
-	const auto dwDesired = S::CTFPlayer_FireEvent_IsHolidayActive_Call();
+	static const auto dwDesired = S::CTFPlayer_FireEvent_IsHolidayActive_Call();
 	const auto dwRetAddr = uintptr_t(_ReturnAddress());
-
-	if (dwRetAddr == dwDesired)
-		return true;
 	
-	return CALL_ORIGINAL(eHoliday);
+	return dwRetAddr == dwDesired ? true : CALL_ORIGINAL(eHoliday);
 }

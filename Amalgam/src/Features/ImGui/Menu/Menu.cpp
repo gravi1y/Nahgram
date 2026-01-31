@@ -708,49 +708,32 @@ void CMenu::MenuVisuals(int iTab)
 				} EndSection();
 				if (Section("Misc", 8))
 				{
+					FToggle("Backtrack", &tGroup.m_bBacktrack, FToggleEnum::Left);
+					SameLine(GetWindowWidth() - H::Draw.Scale(33));
+					if (IconButton(ICON_MD_KEYBOARD_ARROW_DOWN))
+						OpenPopup("Backtrack");
+
 					FToggle("Offscreen arrows", &tGroup.m_bOffscreenArrows, FToggleEnum::Left);
 					SameLine(GetWindowWidth() - H::Draw.Scale(33));
 					if (IconButton(ICON_MD_KEYBOARD_ARROW_DOWN))
 						OpenPopup("OffscreenArrows");
 
-					FToggle("Pickup timer", &tGroup.m_bPickupTimer);
-
-					FToggle("Backtrack", &tGroup.m_iBacktrack, BacktrackEnum::Enabled, FToggleEnum::Left);
-					SameLine(GetWindowWidth() - H::Draw.Scale(33));
-					if (IconButton(ICON_MD_KEYBOARD_ARROW_DOWN))
-						OpenPopup("Backtrack");
-
-					FToggle("Trajectory", &tGroup.m_iTrajectory, TrajectoryEnum::Enabled, FToggleEnum::Left);
-					SameLine(GetWindowWidth() - H::Draw.Scale(33));
-					if (IconButton(ICON_MD_KEYBOARD_ARROW_DOWN))
-						OpenPopup("Trajectory");
-
-					FToggle("Sightlines", &tGroup.m_iSightlines, SightlinesEnum::Enabled, FToggleEnum::Left);
+					FToggle("Sightlines", &tGroup.m_bSightlines, FToggleEnum::Left);
 					SameLine(GetWindowWidth() - H::Draw.Scale(33));
 					if (IconButton(ICON_MD_KEYBOARD_ARROW_DOWN))
 						OpenPopup("Sightlines");
 
-					SetNextWindowSize({ H::Draw.Scale(300), 0 });
-					if (FBeginPopup("Trajectory"))
-					{
-						SetCursorPosY(GetCursorPosY() - H::Draw.Scale(8));
-
-						FDropdown("Flags", &tGroup.m_iTrajectory, { "Predict", "##Divider", "Radius", "Trace", "Sphere", "##Divider", "Path" }, { TrajectoryEnum::Predict, TrajectoryEnum::Radius, TrajectoryEnum::Trace, TrajectoryEnum::Sphere, TrajectoryEnum::Path }, FDropdownEnum::Multi);
-						FToggle("Ignore Z", &tGroup.m_iSightlines, SightlinesEnum::IgnoreZ);
-
-						EndPopup();
-					}
+					FToggle("Pickup timer", &tGroup.m_bPickupTimer);
 
 					SetNextWindowSize({ H::Draw.Scale(300), 0 });
 					if (FBeginPopup("Backtrack"))
 					{
 						SetCursorPosY(GetCursorPosY() - H::Draw.Scale(8));
-
-						FDropdown("##Draw", &tGroup.m_iBacktrack, { "Last", "First", "##Divider", "Always" }, { BacktrackEnum::Last, BacktrackEnum::First, BacktrackEnum::Always }, FDropdownEnum::Multi, 0, "All");
+						FDropdown("##Draw", &tGroup.m_iBacktrackDraw, { "Last", "First", "##Divider", "Always" }, {}, FDropdownEnum::Multi, 0, "All");
 
 						FMDropdown("Material", &tGroup.m_vBacktrackChams, FDropdownEnum::Left);
 						SetCursorPos({ GetWindowWidth() / 2 + GetStyle().WindowPadding.x / 2, GetCursorPosY() - H::Draw.Scale(32) });
-						FToggle("Ignore Z", &tGroup.m_iBacktrack, BacktrackEnum::IgnoreZ, FToggleEnum::Left);
+						FToggle("Ignore Z", &tGroup.m_iBacktrackDraw, BacktrackEnum::IgnoreZ, FToggleEnum::Left);
 
 						SetCursorPosY(GetCursorPosY() + H::Draw.Scale(8));
 						PushTransparent(!tGroup.m_tBacktrackGlow.Stencil);
@@ -783,7 +766,7 @@ void CMenu::MenuVisuals(int iTab)
 					SetNextWindowSize({ H::Draw.Scale(300), 0 });
 					if (FBeginPopup("Sightlines"))
 					{
-						FToggle("Ignore Z", &tGroup.m_iSightlines, SightlinesEnum::IgnoreZ);
+						FToggle("Ignore Z", &tGroup.m_bSightlinesIgnoreZ);
 
 						EndPopup();
 					}
@@ -1922,7 +1905,7 @@ void CMenu::MenuLogs(int iTab)
 						fStream.close();
 
 						SDK::SetClipboard(sString);
-						SDK::Output("Amalgam", "Copied playerlist to clipboard", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_TOAST | OUTPUT_MENU | OUTPUT_DEBUG);
+						SDK::Output("Amalgam", "Copied playerlist to clipboard", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 					}
 				}
 
@@ -2023,7 +2006,7 @@ void CMenu::MenuLogs(int iTab)
 						}
 						catch (...)
 						{
-							SDK::Output("Amalgam", "Failed to import playerlist", ALTERNATE_COLOR, OUTPUT_CONSOLE | OUTPUT_TOAST | OUTPUT_MENU | OUTPUT_DEBUG);
+							SDK::Output("Amalgam", "Failed to import playerlist", { 175, 150, 255, 127 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 						}
 					}
 
@@ -2084,7 +2067,7 @@ void CMenu::MenuLogs(int iTab)
 							}
 
 							F::PlayerUtils.m_bSave = true;
-							SDK::Output("Amalgam", "Imported playerlist", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_TOAST | OUTPUT_MENU | OUTPUT_DEBUG);
+							SDK::Output("Amalgam", "Imported playerlist", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 
 							CloseCurrentPopup();
 						}
@@ -2115,11 +2098,11 @@ void CMenu::MenuLogs(int iTab)
 							F::Configs.m_sCorePath + std::format("Backup{}.json", iBackupCount + 1),
 							std::filesystem::copy_options::overwrite_existing
 						);
-						SDK::Output("Amalgam", "Saved backup playerlist", DEFAULT_COLOR, OUTPUT_CONSOLE | OUTPUT_TOAST | OUTPUT_MENU | OUTPUT_DEBUG);
+						SDK::Output("Amalgam", "Saved backup playerlist", { 175, 150, 255 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 					}
 					catch (...)
 					{
-						SDK::Output("Amalgam", "Failed to backup playerlist", ALTERNATE_COLOR, OUTPUT_CONSOLE | OUTPUT_TOAST | OUTPUT_MENU | OUTPUT_DEBUG);
+						SDK::Output("Amalgam", "Failed to backup playerlist", { 175, 150, 255, 127 }, OUTPUT_CONSOLE | OUTPUT_DEBUG | OUTPUT_TOAST | OUTPUT_MENU);
 					}
 				}
 			}

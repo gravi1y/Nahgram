@@ -10,6 +10,6 @@ MAKE_HOOK(CViewRender_DrawUnderwaterOverlay, S::CViewRender_DrawUnderwaterOverla
 		return CALL_ORIGINAL(rcx);
 #endif
 
-	if (!Vars::Visuals::Removals::ScreenOverlays.Value || SDK::CleanScreenshot())
+	if (!Vars::Visuals::Removals::ScreenOverlays.Value || Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		CALL_ORIGINAL(rcx);
 }

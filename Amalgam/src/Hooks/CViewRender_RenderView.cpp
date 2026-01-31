@@ -11,7 +11,7 @@ MAKE_HOOK(CViewRender_RenderView, U::Memory.GetVirtual(I::ViewRender, 6), void,
 #endif
 
 	CALL_ORIGINAL(rcx, view, nClearFlags, whatToDraw);
-	if (SDK::CleanScreenshot() || G::Unload)
+	if (Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot() || G::Unload)
 		return;
 
 	F::CameraWindow.RenderView(rcx, view);

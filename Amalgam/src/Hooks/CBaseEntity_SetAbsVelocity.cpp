@@ -62,9 +62,8 @@ MAKE_HOOK(CBaseEntity_SetAbsVelocity, S::CBaseEntity_SetAbsVelocity(), void,
 		return CALL_ORIGINAL(rcx, vecAbsVelocity);
 #endif
 
-	const auto dwDesired = S::CBasePlayer_PostDataUpdate_SetAbsVelocity_Call();
+	static const auto dwDesired = S::CBasePlayer_PostDataUpdate_SetAbsVelocity_Call();
 	const auto dwRetAddr = uintptr_t(_ReturnAddress());
-
 	if (dwRetAddr != dwDesired)
 		return CALL_ORIGINAL(rcx, vecAbsVelocity);
 	

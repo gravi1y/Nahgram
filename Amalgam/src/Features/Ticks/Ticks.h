@@ -33,12 +33,10 @@ public:
 	void Start(CTFPlayer* pLocal, CUserCmd* pCmd);
 	void End(CTFPlayer* pLocal, CUserCmd* pCmd);
 
-	void AntiWarp(CTFPlayer* pLocal, float flYaw, float& flForwardMove, float& flSideMove, int iTicks);
-	void AntiWarp(CTFPlayer* pLocal, float flYaw, float& flForwardMove, float& flSideMove);
+	void AntiWarp(CTFPlayer* pLocal, float flYaw, float& flForwardMove, float& flSideMove, int iTicks = -1);
 	void AntiWarp(CTFPlayer* pLocal, CUserCmd* pCmd);
 
-	bool CanChoke(bool bCanShift, int iMaxTicks);
-	bool CanChoke(bool bCanShift = false);
+	bool CanChoke();
 	int GetTicks(CTFWeaponBase* pWeapon = nullptr);
 	int GetShotsWithinPacket(CTFWeaponBase* pWeapon, int iTicks = Vars::Doubletap::TickLimit.Value);
 	int GetMinimumTicksNeeded(CTFWeaponBase* pWeapon);
@@ -62,7 +60,6 @@ public:
 	bool m_bShifted = false;
 
 	int m_iWait = 0;
-	int m_iMaxUsrCmdProcessTicks = 24;
 	int m_iMaxShift = 24;
 	int m_iDeficit = 0;
 };

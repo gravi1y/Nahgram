@@ -10,7 +10,8 @@ MAKE_HOOK(CHudCrosshair_GetDrawPosition, S::CHudCrosshair_GetDrawPosition(), voi
 		return CALL_ORIGINAL(pX, pY, pbBehindCamera, angleCrosshairOffset);
 #endif
 
-	if (!Vars::Visuals::Viewmodel::CrosshairAim.Value && !Vars::Visuals::Thirdperson::Crosshair.Value || SDK::CleanScreenshot())
+    if (!Vars::Visuals::Viewmodel::CrosshairAim.Value && !Vars::Visuals::Thirdperson::Crosshair.Value
+        || Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
         return CALL_ORIGINAL(pX, pY, pbBehindCamera, angleCrosshairOffset);
 
 	auto pLocal = H::Entities.GetLocal();

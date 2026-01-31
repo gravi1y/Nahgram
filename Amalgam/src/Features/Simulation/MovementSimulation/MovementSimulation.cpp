@@ -1,6 +1,6 @@
 #include "MovementSimulation.h"
-#include "../../EnginePrediction/EnginePrediction.h"
 
+#include "../../EnginePrediction/EnginePrediction.h"
 #include <numeric>
 
 namespace MoveSimConstants
@@ -291,7 +291,7 @@ bool CMovementSimulation::Initialize(CBaseEntity* pEntity, MoveStorage& tStorage
 		float flNewChance = 1.f;
 		if (dbTotalWeight > 0.0)
 			flNewChance = static_cast<float>(1.0 - std::clamp(dbDevWeight / dbTotalWeight, 0.0, 1.0));
-
+		
 		float flCurrentChance = flLegacyChance;
 		if (dbTotalWeight > 0.0)
 		{
@@ -585,7 +585,6 @@ void CMovementSimulation::GetAverageYaw(MoveStorage& tStorage, int iSamples)
 		VisualizeRecords(tRecord1, tRecord2, { 0, 0, 0, 100 }, flStraightFuzzyValue);
 	}
 #endif
-
 	if (iValidStrafes < iMinimumStrafes) // valid strafes not high enough
 		return;
 
@@ -604,10 +603,10 @@ void CMovementSimulation::GetAverageYaw(MoveStorage& tStorage, int iSamples)
 		return;
 
 	float flAverageYaw = static_cast<float>(dbWeightedYaw / dbTotalWeight);
-
+	
 	if (fabsf(flAverageYaw) < 0.2f)
 		return;
-
+	
 	tStorage.m_flAverageYaw = flAverageYaw;
 	SDK::Output("MovementSimulation", std::format("flAverageYaw calculated to {} with weight {:.2f} (min {} {})", flAverageYaw, dbTotalWeight, iMinimum, pPlayer->entindex() == I::EngineClient->GetLocalPlayer() ? "local" : "remote").c_str(), { 100, 255, 150 }, Vars::Debug::Logging.Value);
 }
@@ -674,7 +673,7 @@ void CMovementSimulation::RunTick(MoveStorage& tStorage, bool bPath, std::functi
 	I::Prediction->m_bInPrediction = true;
 	I::Prediction->m_bFirstTimePredicted = false;
 	I::GlobalVars->frametime = I::Prediction->m_bEnginePaused ? 0.f : TICK_INTERVAL;
-
+	
 	CScopedBounds scopedBounds(tStorage.m_pPlayer);
 
 	float flAppliedYaw = 0.f;

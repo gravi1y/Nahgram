@@ -50,7 +50,7 @@ void COffscreenArrows::DrawArrowTo(const Vec3& vFromPos, const Vec3& vToPos, Col
 	);
 }
 
-void COffscreenArrows::Store()
+void COffscreenArrows::Store(CTFPlayer* pLocal)
 {
 	m_mCache.clear();
 	if (!F::Groups.GroupsActive())

@@ -22,10 +22,7 @@ MAKE_HOOK(CPrediction_RunSimulation, S::CPrediction_RunSimulation(), void,
 #endif
 
 	if (F::Ticks.m_bShifting && F::Ticks.m_iShiftedTicks + 1 == F::Ticks.m_iShiftStart)
-	{
-		s_vTickbaseFixes.emplace_back(G::CurrentUserCmd, I::ClientState->lastoutgoingcommand, F::Ticks.m_iShiftStart - F::Ticks.m_iShiftedGoal);
-		F::Ticks.m_bShifting = false;
-	}
+		s_vTickbaseFixes.emplace_back(cmd, I::ClientState->lastoutgoingcommand, F::Ticks.m_iShiftStart - F::Ticks.m_iShiftedGoal);
 
 	for (auto it = s_vTickbaseFixes.begin(); it != s_vTickbaseFixes.end();)
 	{

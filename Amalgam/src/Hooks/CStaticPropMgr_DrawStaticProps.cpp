@@ -25,7 +25,8 @@ MAKE_HOOK(CStudioRender_SetColorModulation, U::Memory.GetVirtual(I::StudioRender
 		return CALL_ORIGINAL(rcx, pColor);
 #endif
 
-	if (!s_bDrawingProps || !(Vars::Visuals::World::Modulations.Value & Vars::Visuals::World::ModulationsEnum::Prop) || SDK::CleanScreenshot())
+	if (!s_bDrawingProps || !(Vars::Visuals::World::Modulations.Value & Vars::Visuals::World::ModulationsEnum::Prop)
+		|| Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return CALL_ORIGINAL(rcx, pColor);
 
 	float flColor[3] = {
@@ -44,7 +45,8 @@ MAKE_HOOK(CStudioRender_SetAlphaModulation, U::Memory.GetVirtual(I::StudioRender
 		return CALL_ORIGINAL(rcx, flAlpha);
 #endif
 
-	if (!s_bDrawingProps || !(Vars::Visuals::World::Modulations.Value & Vars::Visuals::World::ModulationsEnum::Prop) || SDK::CleanScreenshot())
+	if (!s_bDrawingProps || !(Vars::Visuals::World::Modulations.Value & Vars::Visuals::World::ModulationsEnum::Prop)
+		|| Vars::Visuals::UI::CleanScreenshots.Value && I::EngineClient->IsTakingScreenshot())
 		return CALL_ORIGINAL(rcx, flAlpha);
 
 	CALL_ORIGINAL(rcx, Vars::Colors::PropModulation.Value.a / 255.f * flAlpha);
